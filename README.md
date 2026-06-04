@@ -1,4 +1,4 @@
-# TimeLineSlider
+# TimeLineSlider 📅
 
 A lightweight, customizable timeline slider for web apps. Define a year range, customize step intervals, and highlight milestone years while keeping the timeline implementation independent from external slider libraries.
 
