@@ -1,6 +1,6 @@
 {
     "name": "timeline-slider",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "A draggable and customizable timeline slider with specific active years.",
     "main": "src/TimeLineSlider.js",
     "module": "src/TimeLineSlider.js",
