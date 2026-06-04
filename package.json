@@ -17,9 +17,8 @@
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/alinass73/timeline-slider-package.git"
+        "url": "git+https://github.com/ali-nasser-nasser/timeline-slider-package.git"
     },
-    "homepage": "https://alinass73.github.io/time-line/",
     "files": [
         "src/",
         "css/",
