@@ -1,230 +1,421 @@
 
 class TimeLineSlider {
-  constructor() {
-    this.timeLineId = "time-line";
-    this.timeLineElement = document.getElementById(this.timeLineId);
-    this.lineShape = `<div class="one-line slide-line"></div>`;
-    this.specificLineShape = `<div class="specific-line slide-line"></div>`;
-    this.lineShapesHtml = '';
-    this.startYear = 1010;
-    this.endYear = 2100;
-    this.step = 10;
+  constructor(options = {}) {
+    const defaults = {
+      container: '#time-line',
+      startYear: 1010,
+      endYear: 2100,
+      step: 10,
+      specialStep: 100,
+      showLabels: true,
+      activeSlideClass: 'active',
+      sliderValues: null,
+      initialValue: null,
+      onChange: null,
+    };
+
+    this.options = { ...defaults, ...options };
+    this.container = typeof this.options.container === 'string'
+      ? document.querySelector(this.options.container)
+      : this.options.container;
+
+    if (!this.container) {
+      throw new Error('TimeLineSlider: container element not found');
+    }
+
+    this.container.classList.add('timeline-slider-wrapper');
     this.isDragging = false;
-    this.slideYears = [];
-    this.offsetXx = 0;
-    this.activeSlideClass='active';
-    this.specialStep=100;
-    this.generateTimeLine();
-    this.addDraggableElement();
-    
-    this.allSlides = document.querySelectorAll('[slide-year]');
-    this.collectSlideYears();
-    this.addEventListeners();
+    this.offsetX = 0;
+    this.activeValue = null;
+
+    this.boundPointerMove = this.handlePointerMove.bind(this);
+    this.boundPointerUp = this.handlePointerUp.bind(this);
+    this.boundPointerDown = this.handlePointerDown.bind(this);
+
+    this.render();
+    this.attachDocumentListeners();
+
+    const initialValue = this.options.initialValue !== null
+      ? Number(this.options.initialValue)
+      : this.sliderYears[0];
+
+    this.setValue(initialValue, { animate: false, notify: false });
   }
-  
- 
-  addDraggableElement() {
-    this.draggableElement.addEventListener('mousedown', (e) => {
-      this.isDragging = true;
-      this.draggableElement.classList.remove('translate');
-      this.offsetXx = e.clientX - this.draggableElement.getBoundingClientRect().left;
-      this.draggableElement.classList.add('dragging');
+
+  attachDocumentListeners() {
+    document.addEventListener('pointermove', this.boundPointerMove);
+    document.addEventListener('pointerup', this.boundPointerUp);
+  }
+
+  on(eventName, listener) {
+    if (typeof listener !== 'function') {
+      return this;
+    }
+
+    this.eventListeners = this.eventListeners || {};
+    this.eventListeners[eventName] = this.eventListeners[eventName] || [];
+    this.eventListeners[eventName].push(listener);
+    return this;
+  }
+
+  off(eventName, listener) {
+    if (!this.eventListeners || !Array.isArray(this.eventListeners[eventName])) {
+      return this;
+    }
+
+    this.eventListeners[eventName] = this.eventListeners[eventName].filter(
+      (existing) => existing !== listener,
+    );
+    return this;
+  }
+
+  emit(eventName, detail = {}) {
+    if (this.eventListeners && Array.isArray(this.eventListeners[eventName])) {
+      this.eventListeners[eventName].forEach((listener) => {
+        listener(detail);
+      });
+    }
+
+    if (this.container && typeof CustomEvent === 'function') {
+      this.container.dispatchEvent(new CustomEvent(`timeline-${eventName}`, { detail }));
+    }
+
+    return this;
+  }
+
+  getValue() {
+    return this.activeValue;
+  }
+
+  syncToYear(year, options = {}) {
+    return this.setValue(year, options);
+  }
+
+  createNumberRange(start, end, step) {
+    const startNum = Number(start);
+    const endNum = Number(end);
+    const stepNum = Number(step) || 1;
+    const years = [];
+
+    if (!Number.isFinite(startNum) || !Number.isFinite(endNum) || stepNum <= 0) {
+      return years;
+    }
+
+    if (startNum <= endNum) {
+      for (let year = startNum; year <= endNum; year += stepNum) {
+        years.push(year);
+      }
+    } else {
+      for (let year = startNum; year >= endNum; year -= stepNum) {
+        years.push(year);
+      }
+    }
+
+    return years;
+  }
+
+  normalizeYearValues(values) {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+
+    return Array.from(new Set(values
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value))))
+      .sort((a, b) => a - b);
+  }
+
+  render() {
+    this.lineYears = this.createNumberRange(
+      this.options.startYear,
+      this.options.endYear,
+      this.options.step,
+    );
+
+    this.sliderYears = this.normalizeYearValues(this.options.sliderValues || this.lineYears);
+
+    if (this.sliderYears.length === 0) {
+      this.sliderYears = [...this.lineYears];
+    }
+
+    this.valueSet = new Set(this.sliderYears);
+
+    this.container.innerHTML = `
+      <div class="lines"></div>
+      <div class="timeline-handle"><div class="inner"></div></div>
+    `;
+
+    this.linesElement = this.container.querySelector('.lines');
+    this.handle = this.container.querySelector('.timeline-handle');
+
+    this.lineYears.forEach((year) => {
+      const line = document.createElement('div');
+      line.dataset.year = String(year);
+      const specialStep = Number(this.options.specialStep);
+      const isSpecific = Number.isFinite(specialStep)
+        && specialStep > 0
+        && ((year - Number(this.options.startYear)) % specialStep === 0);
+      line.className = [
+        'slide-line',
+        'timeline-line',
+        isSpecific ? 'specific-line' : 'one-line',
+      ].join(' ');
+
+      // optional label under specific lines (developer-controlled)
+      if (isSpecific && this.options.showLabels) {
+        const label = document.createElement('div');
+        label.className = 'line-label';
+        label.textContent = String(year);
+        line.appendChild(label);
+      }
+
+      this.linesElement.appendChild(line);
     });
 
-    document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-    document.addEventListener('mouseup', () => this.handleMouseUp());
+    this.lineElements = Array.from(this.container.querySelectorAll('.timeline-line'));
+    this.bindLineEvents();
+    this.handle.style.left = '0px';
+    this.handle.removeEventListener('pointerdown', this.boundPointerDown);
+    this.handle.addEventListener('pointerdown', this.boundPointerDown);
   }
 
-  handleMouseMove(e) {
-    if (this.isDragging) {
-      const x = e.clientX - this.offsetXx;
-      const containerRect = this.timeLineElement.getBoundingClientRect();
-      const imgRect = this.draggableElement.getBoundingClientRect();
-
-      if (x >= this.timeLineElement.offsetLeft && (x + imgRect.width) <= containerRect.right) {
-        this.draggableElement.style.left = `${x - this.timeLineElement.offsetLeft}px`;
-      }
-    }
-  }
-
-  handleMouseUp() {
-    this.isDragging = false;
-    this.draggableElement.classList.remove('dragging');
-    this.draggableElement.classList.add('translate');
-
-    const minYear = Math.min(...this.slideYears);
-    const maxYear = Math.max(...this.slideYears);
-    let oldSlide = document.querySelector(`[slide-year="${minYear}"]`);
-    let lastSlide = document.querySelector(`[slide-year="${maxYear}"]`);
-
-    if (this.draggableElement.getBoundingClientRect().left > lastSlide.getBoundingClientRect().left) {
-      this.translateToYear(maxYear);
-    } else if (this.draggableElement.getBoundingClientRect().left < oldSlide.getBoundingClientRect().left) {
-      this.translateToYear(minYear);
-    } else {
-      for (let slide of this.allSlides) {
-        let slideLine = document.getElementById(slide.getAttribute('slide-year'));
-        if ((slideLine.offsetLeft - this.draggableElement.offsetWidth / 2) >= this.draggableElement.offsetLeft) {
-          let oldSlideYear = document.getElementById(oldSlide.getAttribute('slide-year'));
-          let newSlideYear = (this.draggableElement.offsetLeft - (oldSlideYear.offsetLeft - this.draggableElement.offsetWidth / 2) >= 
-                              (slideLine.offsetLeft - this.draggableElement.offsetLeft - this.draggableElement.offsetWidth / 2))
-                              ? slide.getAttribute('slide-year')
-                              : oldSlide.getAttribute('slide-year');
-          this.translateToYear(newSlideYear);
-          break;
-        }
-        oldSlide = slide;
-      }
-    }
-  }
-
-  //touch event
-  addDraggableElement() {
-    // Handle mouse down and touch start
-    const startDrag = (e) => {
-      e.preventDefault();
-      this.isDragging = true;
-      this.draggableElement.classList.remove('translate');
-  
-      // Determine offset based on touch or mouse event
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      this.offsetXx = clientX - this.draggableElement.getBoundingClientRect().left;
-  
-      this.draggableElement.classList.add('dragging');
-    };
-  
-    // Handle mouse move and touch move
-    const moveDrag = (e) => {
-      if (!this.isDragging) return;
-  
-      // Determine clientX based on touch or mouse event
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const x = clientX - this.offsetXx;
-  
-      const containerRect = this.timeLineElement.getBoundingClientRect();
-      const imgRect = this.draggableElement.getBoundingClientRect();
-  
-      if (x >= this.timeLineElement.offsetLeft && (x + imgRect.width) <= containerRect.right) {
-        this.draggableElement.style.left = `${x - this.timeLineElement.offsetLeft}px`;
-      }
-    };
-  
-    // Handle mouse up and touch end
-    const endDrag = () => {
-      if (!this.isDragging) return;
-      this.isDragging = false;
-      this.draggableElement.classList.remove('dragging');
-      this.draggableElement.classList.add('translate');
-  
-      // Handle snapping logic
-      this.handleMouseUp();
-    };
-  
-    // Add mouse event listeners
-    this.draggableElement.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', moveDrag);
-    document.addEventListener('mouseup', endDrag);
-  
-    // Add touch event listeners
-    this.draggableElement.addEventListener('touchstart', startDrag);
-    document.addEventListener('touchmove', moveDrag);
-    document.addEventListener('touchend', endDrag);
-  }
-
-  //end touch
-  translateToYear(year) {
-    const targetDiv = document.getElementById(year);
-    const activeSlide = document.querySelector(`[slide-year="${year}"]`);
-    this.allSlides.forEach((e) => e.classList.remove(this.activeSlideClass));
-    activeSlide.classList.add(this.activeSlideClass);
-    if (targetDiv) {
-      const targetRect = targetDiv.offsetLeft;
-      this.draggableElement.classList.add("translate");
-      this.draggableElement.style.left = `${targetRect - this.draggableElement.offsetWidth / 2 }px`;
-    } else {
-      console.error('Target div not found');
-    }
-  }
-
-  animateElementToPosition(element, targetPosition, duration) {
-    const startTime = performance.now();
-    const startPosition = element.offsetLeft;
-    const distance = targetPosition - startPosition;
-
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeInOutProgress = progress < 0.5
-        ? 2 * progress * progress
-        : -1 + (4 - 2 * progress) * progress;
-      const currentPosition = startPosition + distance * easeInOutProgress;
-      element.style.left = `${currentPosition}px`;
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }
-
-  collectSlideYears() {
-    this.allSlides.forEach(slide => {
-      this.slideYears.push(slide.getAttribute('slide-year'));
-    });
-  }
-
-  addEventListeners() {
-    this.allSlides.forEach((slide) => {
-      slide.addEventListener('click', () => {
-        this.translateToYear(slide.getAttribute('slide-year'));
+  bindLineEvents() {
+    this.lineElements.forEach((line) => {
+      line.addEventListener('click', () => {
+        this.handleLineClick(Number(line.dataset.year));
       });
     });
   }
 
-      
-  generateTimeLine(s=this.startYear,e=this.endYear,step=this.step) {
-    this.lineShapesHtml = '';
-    // document.addEventListener('load',()=>{
-      for (let i = s; i <= e; i += step) {
-        if (i % this.specialStep == 0) {
-          this.lineShapesHtml += `<div id="${i}" class="specific-line slide-line"></div>`;
-        } else {
-          this.lineShapesHtml += `<div id="${i}" class="one-line slide-line"></div>`;
-        }
-      }
-  
-      const imsElementHtml = `<div id="draggable"><div class="inner"></div></div>`;
-      this.timeLineElement.innerHTML = `<div class="lines">${this.lineShapesHtml}</div>${imsElementHtml}`;
-      this.draggableElement = document.getElementById('draggable');
-      this.addDraggableElement()
-    // })
-  }
-  
-  setStartEnd(s, e) {
-    this.startYear = s;
-    this.endYear = e;
-    this.generateTimeLine(s,e,this.step);
-    // this.generateTimeLine();
-  }
-  setStep(step)
-  {
-    this.step=step;
-    this.generateTimeLine(this.startYear,this.endYear,step);
-  }
-  setActiveSlideClass(className)
-  {
-    this.activeSlideClass=className;
-    this.generateTimeLine();
-    console.log(this.activeSlideClass)
-    console.log(className)
-  }
-  
-  setSpecialStep(specialStep){
-    this.specialStep=specialStep;
-    this.generateTimeLine();
+  handleLineClick(year) {
+    const targetYear = this.valueSet.has(year)
+      ? year
+      : this.getNearestSliderValue(year);
+
+    this.setValue(targetYear, { animate: true });
   }
 
+  handlePointerDown(event) {
+    event.preventDefault();
+    if (!this.handle) {
+      return;
+    }
+
+    this.isDragging = true;
+    this.handle.classList.remove('translate');
+    this.handle.classList.add('dragging');
+    this.offsetX = event.clientX - this.handle.getBoundingClientRect().left;
+
+    if (event.pointerId && typeof this.handle.setPointerCapture === 'function') {
+      this.handle.setPointerCapture(event.pointerId);
+    }
+  }
+
+  handlePointerMove(event) {
+    if (!this.isDragging || !this.handle) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const containerRect = this.container.getBoundingClientRect();
+    const handleRect = this.handle.getBoundingClientRect();
+    const rawLeft = event.clientX - containerRect.left - this.offsetX;
+    const maxLeft = Math.max(0, containerRect.width - handleRect.width);
+    const clampLeft = this.clamp(rawLeft, 0, maxLeft);
+
+    this.handle.style.left = `${clampLeft}px`;
+
+    const nearest = this.getNearestSliderValueByHandlePosition();
+    if (nearest !== null) {
+      this.updateActiveLine(nearest, { notify: false, temporary: true });
+    }
+  }
+
+  handlePointerUp() {
+    if (!this.isDragging) {
+      return;
+    }
+
+    this.isDragging = false;
+    this.handle.classList.remove('dragging');
+    this.handle.classList.add('translate');
+
+    const nearest = this.getNearestSliderValueByHandlePosition();
+    if (nearest !== null) {
+      this.setValue(nearest, { animate: true });
+    }
+  }
+
+  clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  getLineElement(year) {
+    return this.lineElements.find((line) => Number(line.dataset.year) === Number(year));
+  }
+
+  getNearestSliderValue(year) {
+    if (!Array.isArray(this.sliderYears) || this.sliderYears.length === 0) {
+      return null;
+    }
+
+    const numericYear = Number(year);
+    if (!Number.isFinite(numericYear)) {
+      return null;
+    }
+
+    return this.sliderYears.reduce((closest, current) => {
+      return Math.abs(current - numericYear) < Math.abs(closest - numericYear) ? current : closest;
+    }, this.sliderYears[0]);
+  }
+
+  getNearestSliderValueByHandlePosition() {
+    if (!this.handle || this.lineElements.length === 0) {
+      return null;
+    }
+
+    const containerRect = this.container.getBoundingClientRect();
+    const handleRect = this.handle.getBoundingClientRect();
+    const handleCenterX = handleRect.left - containerRect.left + handleRect.width / 2;
+
+    const nearest = this.sliderYears.reduce((closestYear, currentYear) => {
+      const line = this.getLineElement(currentYear);
+      if (!line) {
+        return closestYear;
+      }
+
+      const lineRect = line.getBoundingClientRect();
+      const lineCenterX = lineRect.left - containerRect.left + lineRect.width / 2;
+      return Math.abs(lineCenterX - handleCenterX) < Math.abs(this.getLineCenterX(closestYear, containerRect) - handleCenterX)
+        ? currentYear
+        : closestYear;
+    }, this.sliderYears[0]);
+
+    return nearest;
+  }
+
+  getLineCenterX(year, containerRect = null) {
+    const line = this.getLineElement(year);
+    if (!line) {
+      return 0;
+    }
+
+    const lineRect = line.getBoundingClientRect();
+    const container = containerRect || this.container.getBoundingClientRect();
+    return lineRect.left - container.left + lineRect.width / 2;
+  }
+
+  updateActiveLine(year, options = {}) {
+    const { notify = true, temporary = false } = options;
+    const normalizedYear = Number(year);
+    if (!Number.isFinite(normalizedYear)) {
+      return;
+    }
+
+    this.lineElements.forEach((line) => {
+      line.classList.toggle(
+        this.options.activeSlideClass,
+        Number(line.dataset.year) === normalizedYear,
+      );
+    });
+
+    this.activeValue = normalizedYear;
+
+    if (notify && !temporary) {
+      this.notifyChange(normalizedYear);
+    }
+  }
+
+  moveHandleToYear(year, animate = true) {
+    const line = this.getLineElement(year);
+    if (!line || !this.handle) {
+      return;
+    }
+
+    const containerRect = this.container.getBoundingClientRect();
+    const lineRect = line.getBoundingClientRect();
+    const handleRect = this.handle.getBoundingClientRect();
+    const targetLeft = lineRect.left - containerRect.left + lineRect.width / 2 - handleRect.width / 2;
+    const boundedLeft = this.clamp(targetLeft, 0, Math.max(0, containerRect.width - handleRect.width));
+
+    if (animate) {
+      this.handle.classList.add('translate');
+    }
+
+    this.handle.style.left = `${boundedLeft}px`;
+  }
+
+  setValue(value, options = {}) {
+    const { animate = true, notify = true } = options;
+    const nearestValue = this.getNearestSliderValue(value);
+    if (nearestValue === null) {
+      return;
+    }
+
+    this.updateActiveLine(nearestValue, { notify, temporary: false });
+    this.moveHandleToYear(nearestValue, animate);
+  }
+
+  notifyChange(value) {
+    if (typeof this.options.onChange === 'function') {
+      this.options.onChange(value);
+    }
+
+    this.emit('change', { value });
+  }
+
+  setSliderValues(values) {
+    this.options.sliderValues = values;
+    this.render();
+    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    return this;
+  }
+
+  setStartEnd(startYear, endYear, step = this.options.step) {
+    this.options.startYear = startYear;
+    this.options.endYear = endYear;
+    this.options.step = step;
+    this.render();
+    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    return this;
+  }
+
+  setStep(step) {
+    this.options.step = step;
+    this.render();
+    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    return this;
+  }
+
+  setSpecialStep(specialStep) {
+    this.options.specialStep = specialStep;
+    this.render();
+    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    return this;
+  }
+
+  setShowLabels(showLabels) {
+    this.options.showLabels = Boolean(showLabels);
+    this.render();
+    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    return this;
+  }
+
+  setActiveSlideClass(className) {
+    this.options.activeSlideClass = className;
+    this.updateActiveLine(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    return this;
+  }
+
+  destroy() {
+    document.removeEventListener('pointermove', this.boundPointerMove);
+    document.removeEventListener('pointerup', this.boundPointerUp);
+    if (this.handle) {
+      this.handle.removeEventListener('pointerdown', this.boundPointerDown);
+    }
+    this.container.innerHTML = '';
+  }
 }
 
 export default TimeLineSlider;

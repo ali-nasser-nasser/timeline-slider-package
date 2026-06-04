@@ -23,8 +23,9 @@
     ],
     "exports": {
       "./css": "./css/main.css",
+      "./css/main.css": "./css/main.css",
       "./package.json": "./package.json",
       ".": "./src/TimeLineSlider.js"
-    }    
+    }
   }
   
