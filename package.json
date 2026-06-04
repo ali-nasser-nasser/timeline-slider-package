@@ -1,31 +1,34 @@
 {
     "name": "timeline-slider",
-    "version": "1.0.5",
+    "version": "1.0.8",
     "description": "A draggable and customizable timeline slider with specific active years.",
     "main": "src/TimeLineSlider.js",
     "module": "src/TimeLineSlider.js",
     "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "keywords": ["timeline", "slider", "draggable"],
+    "keywords": [
+        "timeline",
+        "slider",
+        "draggable"
+    ],
     "author": "alinass58",
     "license": "MIT",
     "type": "module",
     "repository": {
-      "type": "git",
-      "url": "https://github.com/alinass73/timeline-slider-package.git"
+        "type": "git",
+        "url": "https://github.com/alinass73/timeline-slider-package.git"
     },
     "homepage": "https://alinass73.github.io/time-line/",
     "files": [
-      "src/",
-      "css/",
-      "README.md"
+        "src/",
+        "css/",
+        "README.md"
     ],
     "exports": {
-      "./css": "./css/main.css",
-      "./css/main.css": "./css/main.css",
-      "./package.json": "./package.json",
-      ".": "./src/TimeLineSlider.js"
+        "./css": "./css/main.css",
+        "./css/main.css": "./css/main.css",
+        "./package.json": "./package.json",
+        ".": "./src/TimeLineSlider.js"
     }
-  }
-  
+}
