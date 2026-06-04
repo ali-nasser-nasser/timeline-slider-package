@@ -1,6 +1,6 @@
 {
     "name": "timeline-slider",
-    "version": "1.0.8",
+    "version": "2.0.0",
     "description": "A draggable and customizable timeline slider with specific active years.",
     "main": "src/TimeLineSlider.js",
     "module": "src/TimeLineSlider.js",
@@ -17,7 +17,7 @@
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "https://github.com/alinass73/timeline-slider-package.git"
+        "url": "git+https://github.com/alinass73/timeline-slider-package.git"
     },
     "homepage": "https://alinass73.github.io/time-line/",
     "files": [
