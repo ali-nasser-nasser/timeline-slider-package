@@ -1,4 +1,3 @@
-
 class TimeLineSlider {
   constructor(options = {}) {
     const defaults = {
@@ -161,7 +160,7 @@ class TimeLineSlider {
         isSpecific ? 'specific-line' : 'one-line',
       ].join(' ');
 
-      // optional label under specific lines (developer-controlled)
+      // optional label under specific (specialStep) lines
       if (isSpecific && this.options.showLabels) {
         const label = document.createElement('div');
         label.className = 'line-label';
@@ -279,20 +278,28 @@ class TimeLineSlider {
     const handleRect = this.handle.getBoundingClientRect();
     const handleCenterX = handleRect.left - containerRect.left + handleRect.width / 2;
 
-    const nearest = this.sliderYears.reduce((closestYear, currentYear) => {
+    let nearestYear = this.sliderYears[0];
+    let nearestCenterX = this.getLineCenterX(nearestYear, containerRect);
+    let nearestDistance = Math.abs(nearestCenterX - handleCenterX);
+
+    for (let i = 1; i < this.sliderYears.length; i += 1) {
+      const currentYear = this.sliderYears[i];
       const line = this.getLineElement(currentYear);
       if (!line) {
-        return closestYear;
+        continue;
       }
 
       const lineRect = line.getBoundingClientRect();
       const lineCenterX = lineRect.left - containerRect.left + lineRect.width / 2;
-      return Math.abs(lineCenterX - handleCenterX) < Math.abs(this.getLineCenterX(closestYear, containerRect) - handleCenterX)
-        ? currentYear
-        : closestYear;
-    }, this.sliderYears[0]);
+      const distance = Math.abs(lineCenterX - handleCenterX);
 
-    return nearest;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestYear = currentYear;
+      }
+    }
+
+    return nearestYear;
   }
 
   getLineCenterX(year, containerRect = null) {
@@ -365,10 +372,16 @@ class TimeLineSlider {
     this.emit('change', { value });
   }
 
+  getActiveOrFirstYear() {
+    return this.activeValue !== null && this.activeValue !== undefined
+      ? this.activeValue
+      : this.sliderYears[0];
+  }
+
   setSliderValues(values) {
     this.options.sliderValues = values;
     this.render();
-    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    this.setValue(this.getActiveOrFirstYear(), { animate: false, notify: false });
     return this;
   }
 
@@ -377,34 +390,34 @@ class TimeLineSlider {
     this.options.endYear = endYear;
     this.options.step = step;
     this.render();
-    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    this.setValue(this.getActiveOrFirstYear(), { animate: false, notify: false });
     return this;
   }
 
   setStep(step) {
     this.options.step = step;
     this.render();
-    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    this.setValue(this.getActiveOrFirstYear(), { animate: false, notify: false });
     return this;
   }
 
   setSpecialStep(specialStep) {
     this.options.specialStep = specialStep;
     this.render();
-    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    this.setValue(this.getActiveOrFirstYear(), { animate: false, notify: false });
     return this;
   }
 
   setShowLabels(showLabels) {
     this.options.showLabels = Boolean(showLabels);
     this.render();
-    this.setValue(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    this.setValue(this.getActiveOrFirstYear(), { animate: false, notify: false });
     return this;
   }
 
   setActiveSlideClass(className) {
     this.options.activeSlideClass = className;
-    this.updateActiveLine(this.activeValue || this.sliderYears[0], { animate: false, notify: false });
+    this.updateActiveLine(this.getActiveOrFirstYear(), { notify: false, temporary: false });
     return this;
   }
 
