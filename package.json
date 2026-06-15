@@ -1,10 +1,30 @@
 {
     "name": "timeline-slider",
-    "version": "2.0.1",
+    "version": "2.1.1",
     "description": "A draggable and customizable timeline slider with specific active years.",
-    "main": "src/TimeLineSlider.js",
-    "module": "src/TimeLineSlider.js",
+    "type": "module",
+    "main": "dist/timeline-slider.cjs",
+    "module": "dist/timeline-slider.js",
+    "unpkg": "dist/timeline-slider.global.js",
+    "jsdelivr": "dist/timeline-slider.global.js",
+    "exports": {
+        ".": {
+            "import": "./dist/timeline-slider.js",
+            "require": "./dist/timeline-slider.cjs"
+        },
+        "./css": "./css/main.css",
+        "./css/main.css": "./css/main.css",
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist/",
+        "css/",
+        "src/",
+        "README.md"
+    ],
     "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [
@@ -14,20 +34,12 @@
     ],
     "author": "alinass58",
     "license": "MIT",
-    "type": "module",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/ali-nasser-nasser/timeline-slider-package.git"
     },
-    "files": [
-        "src/",
-        "css/",
-        "README.md"
-    ],
-    "exports": {
-        "./css": "./css/main.css",
-        "./css/main.css": "./css/main.css",
-        "./package.json": "./package.json",
-        ".": "./src/TimeLineSlider.js"
+    "devDependencies": {
+        "tsup": "^8.0.0",
+        "typescript": "^6.0.3"
     }
 }

@@ -1,8 +1,15 @@
-# Ignore sample project dependencies and build output
-react-demo/node_modules/
-react-demo/dist/
+# Dependencies
+node_modules/
 
-# Optional local files
+# Build output
+dist/
+
+# Local files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ignore the local React playground used for testing
+examples/react-playground/
+examples/cdn-html/
+examples/react-playground/node_modules/
