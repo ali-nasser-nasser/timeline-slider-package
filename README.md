@@ -1,4 +1,4 @@
-# TimeLineSlider 📅
+# TimeLineSlider
 
 A lightweight, customizable timeline slider for web apps. Define a year range, customize step intervals, and highlight milestone years while keeping the timeline implementation independent from external slider libraries.
 
@@ -11,6 +11,7 @@ A lightweight, customizable timeline slider for web apps. Define a year range, c
 - Draggable pointer: snap to closest allowed year on release.
 - External slider sync: no dependency on any slider library.
 - Optional labels: show year labels for special markers with `showLabels`.
+- Works via npm (ESM/CJS) or directly via CDN (`<script>` tag, no build step).
 
 ---
 
@@ -49,6 +50,31 @@ Import the component and CSS, then create a new `TimeLineSlider` instance.
   });
 </script>
 ```
+
+### CDN example (no npm/build step) 🌐
+
+Use the prebuilt global bundle directly via unpkg or jsDelivr:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/timeline-slider/css/main.css">
+<div id="time-line"></div>
+
+<script src="https://unpkg.com/timeline-slider"></script>
+<script>
+  const timeLineSlider = new TimeLineSlider({
+    container: '#time-line',
+    startYear: 1990,
+    endYear: 2030,
+    step: 5,
+    specialStep: 10,
+    sliderValues: [2000, 2015, 2020],
+    initialValue: 2000,
+    onChange: (value) => console.log('active year:', value),
+  });
+</script>
+```
+
+This exposes a global `TimeLineSlider` class — no module loader or bundler required. You can pin a specific version with `https://unpkg.com/timeline-slider@2.1.0`.
 
 ### React example
 
@@ -213,3 +239,16 @@ Customize the timeline appearance in `css/main.css`:
 - `.timeline-handle` — draggable pointer.
 
 You can override these classes in your own stylesheet.
+
+## Development 🧰
+
+```bash
+npm install     # install dependencies
+npm run build    # build ESM, CJS, and the CDN/global bundle into dist/
+npm run dev      # build in watch mode
+```
+
+Build output in `dist/`:
+- `timeline-slider.js` — ESM bundle
+- `timeline-slider.cjs` — CommonJS bundle
+- `timeline-slider.global.js` — minified IIFE/global bundle for CDN `<script>` usage

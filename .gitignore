@@ -1,8 +1,15 @@
-# Optional local files
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # Ignore the local React playground used for testing
 examples/react-playground/
+examples/cdn-html/
 examples/react-playground/node_modules/
