@@ -1,5 +1,35 @@
+/**
+ * @typedef {Object} TimeLineSliderOptions
+ * @property {string | HTMLElement} [container]
+ * @property {number} [startYear]
+ * @property {number} [endYear]
+ * @property {number} [step]
+ * @property {number} [specialStep]
+ * @property {boolean} [showLabels]
+ * @property {string} [activeSlideClass]
+ * @property {number[] | null} [sliderValues]
+ * @property {number | null} [initialValue]
+ * @property {((value: number) => void) | null} [onChange]
+ */
+
+/**
+ * @typedef {Object} SetValueOptions
+ * @property {boolean} [animate]
+ * @property {boolean} [notify]
+ */
+
+/**
+ * @typedef {Object} UpdateActiveLineOptions
+ * @property {boolean} [notify]
+ * @property {boolean} [temporary]
+ */
+
 class TimeLineSlider {
+  /**
+   * @param {TimeLineSliderOptions} [options]
+   */
   constructor(options = {}) {
+    /** @type {TimeLineSliderOptions} */
     const defaults = {
       container: '#time-line',
       startYear: 1010,
@@ -13,22 +43,34 @@ class TimeLineSlider {
       onChange: null,
     };
 
+    /** @type {TimeLineSliderOptions} */
     this.options = { ...defaults, ...options };
-    this.container = typeof this.options.container === 'string'
-      ? document.querySelector(this.options.container)
-      : this.options.container;
+
+    /** @type {HTMLElement} */
+    this.container = /** @type {HTMLElement} */ (
+      typeof this.options.container === 'string'
+        ? document.querySelector(this.options.container)
+        : this.options.container
+    );
 
     if (!this.container) {
       throw new Error('TimeLineSlider: container element not found');
     }
 
     this.container.classList.add('timeline-slider-wrapper');
+
+    /** @type {boolean} */
     this.isDragging = false;
+    /** @type {number} */
     this.offsetX = 0;
+    /** @type {number | null} */
     this.activeValue = null;
 
+    /** @type {(event: PointerEvent) => void} */
     this.boundPointerMove = this.handlePointerMove.bind(this);
+    /** @type {() => void} */
     this.boundPointerUp = this.handlePointerUp.bind(this);
+    /** @type {(event: PointerEvent) => void} */
     this.boundPointerDown = this.handlePointerDown.bind(this);
 
     this.render();
@@ -46,6 +88,11 @@ class TimeLineSlider {
     document.addEventListener('pointerup', this.boundPointerUp);
   }
 
+  /**
+   * @param {string} eventName
+   * @param {(detail: any) => void} listener
+   * @returns {this}
+   */
   on(eventName, listener) {
     if (typeof listener !== 'function') {
       return this;
@@ -57,6 +104,11 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {string} eventName
+   * @param {(detail: any) => void} listener
+   * @returns {this}
+   */
   off(eventName, listener) {
     if (!this.eventListeners || !Array.isArray(this.eventListeners[eventName])) {
       return this;
@@ -68,6 +120,11 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {string} eventName
+   * @param {any} [detail]
+   * @returns {this}
+   */
   emit(eventName, detail = {}) {
     if (this.eventListeners && Array.isArray(this.eventListeners[eventName])) {
       this.eventListeners[eventName].forEach((listener) => {
@@ -82,18 +139,33 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @returns {number | null}
+   */
   getValue() {
     return this.activeValue;
   }
 
+  /**
+   * @param {number} year
+   * @param {SetValueOptions} [options]
+   * @returns {void}
+   */
   syncToYear(year, options = {}) {
     return this.setValue(year, options);
   }
 
+  /**
+   * @param {number} start
+   * @param {number} end
+   * @param {number} step
+   * @returns {number[]}
+   */
   createNumberRange(start, end, step) {
     const startNum = Number(start);
     const endNum = Number(end);
     const stepNum = Number(step) || 1;
+    /** @type {number[]} */
     const years = [];
 
     if (!Number.isFinite(startNum) || !Number.isFinite(endNum) || stepNum <= 0) {
@@ -113,6 +185,10 @@ class TimeLineSlider {
     return years;
   }
 
+  /**
+   * @param {number[] | null | undefined} values
+   * @returns {number[]}
+   */
   normalizeYearValues(values) {
     if (!Array.isArray(values)) {
       return [];
@@ -137,6 +213,7 @@ class TimeLineSlider {
       this.sliderYears = [...this.lineYears];
     }
 
+    /** @type {Set<number>} */
     this.valueSet = new Set(this.sliderYears);
 
     this.container.innerHTML = `
@@ -144,8 +221,10 @@ class TimeLineSlider {
       <div class="timeline-handle"><div class="inner"></div></div>
     `;
 
-    this.linesElement = this.container.querySelector('.lines');
-    this.handle = this.container.querySelector('.timeline-handle');
+    /** @type {HTMLElement} */
+    this.linesElement = /** @type {HTMLElement} */ (this.container.querySelector('.lines'));
+    /** @type {HTMLElement} */
+    this.handle = /** @type {HTMLElement} */ (this.container.querySelector('.timeline-handle'));
 
     this.lineYears.forEach((year) => {
       const line = document.createElement('div');
@@ -171,7 +250,10 @@ class TimeLineSlider {
       this.linesElement.appendChild(line);
     });
 
-    this.lineElements = Array.from(this.container.querySelectorAll('.timeline-line'));
+    /** @type {HTMLElement[]} */
+    this.lineElements = /** @type {HTMLElement[]} */ (
+      Array.from(this.container.querySelectorAll('.timeline-line'))
+    );
     this.bindLineEvents();
     this.handle.style.left = '0px';
     this.handle.removeEventListener('pointerdown', this.boundPointerDown);
@@ -186,14 +268,20 @@ class TimeLineSlider {
     });
   }
 
+  /**
+   * @param {number} year
+   */
   handleLineClick(year) {
     const targetYear = this.valueSet.has(year)
       ? year
       : this.getNearestSliderValue(year);
 
-    this.setValue(targetYear, { animate: true });
+    this.setValue(/** @type {number} */ (targetYear), { animate: true });
   }
 
+  /**
+   * @param {PointerEvent} event
+   */
   handlePointerDown(event) {
     event.preventDefault();
     if (!this.handle) {
@@ -210,6 +298,9 @@ class TimeLineSlider {
     }
   }
 
+  /**
+   * @param {PointerEvent} event
+   */
   handlePointerMove(event) {
     if (!this.isDragging || !this.handle) {
       return;
@@ -220,8 +311,13 @@ class TimeLineSlider {
     const containerRect = this.container.getBoundingClientRect();
     const handleRect = this.handle.getBoundingClientRect();
     const rawLeft = event.clientX - containerRect.left - this.offsetX;
-    const maxLeft = Math.max(0, containerRect.width - handleRect.width);
-    const clampLeft = this.clamp(rawLeft, 0, maxLeft);
+    // Allow a small overhang on each side equal to half the handle width,
+    // so the handle can be dragged fully onto the first/last line
+    // (which sit flush against the container edges).
+    const overhang = handleRect.width / 2;
+    const minLeft = -overhang;
+    const maxLeft = containerRect.width - handleRect.width + overhang;
+    const clampLeft = this.clamp(rawLeft, minLeft, maxLeft);
 
     this.handle.style.left = `${clampLeft}px`;
 
@@ -246,14 +342,28 @@ class TimeLineSlider {
     }
   }
 
+  /**
+   * @param {number} value
+   * @param {number} min
+   * @param {number} max
+   * @returns {number}
+   */
   clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
   }
 
+  /**
+   * @param {number} year
+   * @returns {HTMLElement | undefined}
+   */
   getLineElement(year) {
     return this.lineElements.find((line) => Number(line.dataset.year) === Number(year));
   }
 
+  /**
+   * @param {number} year
+   * @returns {number | null}
+   */
   getNearestSliderValue(year) {
     if (!Array.isArray(this.sliderYears) || this.sliderYears.length === 0) {
       return null;
@@ -269,6 +379,9 @@ class TimeLineSlider {
     }, this.sliderYears[0]);
   }
 
+  /**
+   * @returns {number | null}
+   */
   getNearestSliderValueByHandlePosition() {
     if (!this.handle || this.lineElements.length === 0) {
       return null;
@@ -302,6 +415,11 @@ class TimeLineSlider {
     return nearestYear;
   }
 
+  /**
+   * @param {number} year
+   * @param {DOMRect | null} [containerRect]
+   * @returns {number}
+   */
   getLineCenterX(year, containerRect = null) {
     const line = this.getLineElement(year);
     if (!line) {
@@ -313,6 +431,10 @@ class TimeLineSlider {
     return lineRect.left - container.left + lineRect.width / 2;
   }
 
+  /**
+   * @param {number} year
+   * @param {UpdateActiveLineOptions} [options]
+   */
   updateActiveLine(year, options = {}) {
     const { notify = true, temporary = false } = options;
     const normalizedYear = Number(year);
@@ -334,6 +456,10 @@ class TimeLineSlider {
     }
   }
 
+  /**
+   * @param {number} year
+   * @param {boolean} [animate]
+   */
   moveHandleToYear(year, animate = true) {
     const line = this.getLineElement(year);
     if (!line || !this.handle) {
@@ -343,16 +469,24 @@ class TimeLineSlider {
     const containerRect = this.container.getBoundingClientRect();
     const lineRect = line.getBoundingClientRect();
     const handleRect = this.handle.getBoundingClientRect();
+    // Center the handle on the line. Intentionally NOT clamped to the
+    // container bounds: the first/last lines sit flush against the
+    // container edges (because .lines uses justify-content: space-between),
+    // so the handle must be allowed to overhang slightly past the edges
+    // to stay visually centered on those lines.
     const targetLeft = lineRect.left - containerRect.left + lineRect.width / 2 - handleRect.width / 2;
-    const boundedLeft = this.clamp(targetLeft, 0, Math.max(0, containerRect.width - handleRect.width));
 
     if (animate) {
       this.handle.classList.add('translate');
     }
 
-    this.handle.style.left = `${boundedLeft}px`;
+    this.handle.style.left = `${targetLeft}px`;
   }
 
+  /**
+   * @param {number} value
+   * @param {SetValueOptions} [options]
+   */
   setValue(value, options = {}) {
     const { animate = true, notify = true } = options;
     const nearestValue = this.getNearestSliderValue(value);
@@ -364,6 +498,9 @@ class TimeLineSlider {
     this.moveHandleToYear(nearestValue, animate);
   }
 
+  /**
+   * @param {number} value
+   */
   notifyChange(value) {
     if (typeof this.options.onChange === 'function') {
       this.options.onChange(value);
@@ -372,12 +509,19 @@ class TimeLineSlider {
     this.emit('change', { value });
   }
 
+  /**
+   * @returns {number}
+   */
   getActiveOrFirstYear() {
     return this.activeValue !== null && this.activeValue !== undefined
       ? this.activeValue
       : this.sliderYears[0];
   }
 
+  /**
+   * @param {number[]} values
+   * @returns {this}
+   */
   setSliderValues(values) {
     this.options.sliderValues = values;
     this.render();
@@ -385,6 +529,12 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {number} startYear
+   * @param {number} endYear
+   * @param {number} [step]
+   * @returns {this}
+   */
   setStartEnd(startYear, endYear, step = this.options.step) {
     this.options.startYear = startYear;
     this.options.endYear = endYear;
@@ -394,6 +544,10 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {number} step
+   * @returns {this}
+   */
   setStep(step) {
     this.options.step = step;
     this.render();
@@ -401,6 +555,10 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {number} specialStep
+   * @returns {this}
+   */
   setSpecialStep(specialStep) {
     this.options.specialStep = specialStep;
     this.render();
@@ -408,6 +566,10 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {boolean} showLabels
+   * @returns {this}
+   */
   setShowLabels(showLabels) {
     this.options.showLabels = Boolean(showLabels);
     this.render();
@@ -415,6 +577,10 @@ class TimeLineSlider {
     return this;
   }
 
+  /**
+   * @param {string} className
+   * @returns {this}
+   */
   setActiveSlideClass(className) {
     this.options.activeSlideClass = className;
     this.updateActiveLine(this.getActiveOrFirstYear(), { notify: false, temporary: false });

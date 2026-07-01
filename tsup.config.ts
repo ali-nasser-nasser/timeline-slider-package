@@ -5,6 +5,7 @@ export default defineConfig([
   {
     entry: { 'timeline-slider': 'src/TimeLineSlider.js' },
     format: ['esm', 'cjs'],
+    dts: true,
     sourcemap: true,
     clean: true,
     target: 'es2018',
