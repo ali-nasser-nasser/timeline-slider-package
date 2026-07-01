@@ -13,3 +13,9 @@ yarn-error.log*
 examples/react-playground/
 examples/cdn-html/
 examples/react-playground/node_modules/
+
+# Ignore the local Next.js playground used for testing
+examples/next-playground/
+examples/next-playground/node_modules/
+examples/next-playground/.next/
+examples/next-playground/out/
