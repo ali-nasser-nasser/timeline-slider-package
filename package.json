@@ -1,14 +1,16 @@
 {
     "name": "timeline-slider",
-    "version": "2.1.1",
+    "version": "2.2.0",
     "description": "A draggable and customizable timeline slider with specific active years.",
     "type": "module",
     "main": "dist/timeline-slider.cjs",
     "module": "dist/timeline-slider.js",
     "unpkg": "dist/timeline-slider.global.js",
     "jsdelivr": "dist/timeline-slider.global.js",
+    "types": "dist/timeline-slider.d.ts",
     "exports": {
         ".": {
+            "types": "./dist/timeline-slider.d.ts",
             "import": "./dist/timeline-slider.js",
             "require": "./dist/timeline-slider.cjs"
         },
@@ -25,6 +27,7 @@
     "scripts": {
         "build": "tsup",
         "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit -p jsconfig.json",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [
@@ -40,6 +43,6 @@
     },
     "devDependencies": {
         "tsup": "^8.0.0",
-        "typescript": "^6.0.3"
+        "typescript": "^5.4.0"
     }
 }
