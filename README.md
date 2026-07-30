@@ -12,6 +12,7 @@ A lightweight, customizable timeline slider for web apps. Define a year range, c
 - External slider sync: no dependency on any slider library.
 - Optional labels: show year labels for special markers with `showLabels`.
 - Works via npm (ESM/CJS) or directly via CDN (`<script>` tag, no build step).
+- Ships with TypeScript-friendly type declarations (`.d.ts`).
 
 ---
 
@@ -74,7 +75,7 @@ Use the prebuilt global bundle directly via unpkg or jsDelivr:
 </script>
 ```
 
-This exposes a global `TimeLineSlider` class — no module loader or bundler required. You can pin a specific version with `https://unpkg.com/timeline-slider@2.1.0`.
+This exposes a global `TimeLineSlider` class — no module loader or bundler required. You can pin a specific version with `https://unpkg.com/timeline-slider@2.1.1`.
 
 ### React example
 
@@ -149,7 +150,7 @@ The package is intentionally slider-agnostic. Use the timeline API and DOM event
 ### Recommended approach
 
 - Call `timeLineSlider.syncToYear(year)` from the external slider when its active slide changes.
-- Listen for timeline changes with `timeLineSlider.on('change', callback)` or container DOM event `timeline-change`.
+- Listen for timeline changes with `timeLineSlider.on('change', callback)` or the container DOM event `timeline-change`.
 - Keep the actual slider implementation outside this package.
 
 ### Example event bridge
@@ -178,77 +179,60 @@ container.addEventListener('timeline-change', (event) => {
 
 ### Constructor options
 
-- `container` — `string | HTMLElement`
-  - Selector or DOM element where the timeline renders.
-- `startYear` — `number`
-  - First year in the timeline range.
-- `endYear` — `number`
-  - Last year in the timeline range.
-- `step` — `number`
-  - Interval between generated timeline markers.
-- `specialStep` — `number`
-  - Interval used to mark milestone years.
-- `showLabels` — `boolean`
-  - Render year labels under special markers.
-- `activeSlideClass` — `string`
-  - Class name applied to the active timeline marker.
-- `sliderValues` — `number[]`
-  - Allowed snap points for the timeline pointer.
-  - Defaults to the full year range.
-- `initialValue` — `number`
-  - Starting selected year.
-- `onChange` — `(value) => void`
-  - Callback invoked whenever the active year changes.
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `container` | `string \| HTMLElement` | `'#time-line'` | Selector or DOM element where the timeline renders. |
+| `startYear` | `number` | `1010` | First year in the timeline range. |
+| `endYear` | `number` | `2100` | Last year in the timeline range. |
+| `step` | `number` | `10` | Interval between generated timeline markers. |
+| `specialStep` | `number` | `100` | Interval used to mark milestone years. |
+| `showLabels` | `boolean` | `true` | Render year labels under special markers. |
+| `activeSlideClass` | `string` | `'active'` | Class name applied to the active timeline marker. |
+| `sliderValues` | `number[]` | full range | Allowed snap points for the timeline pointer. |
+| `initialValue` | `number` | first value | Starting selected year. |
+| `onChange` | `(value: number) => void` | `null` | Callback invoked whenever the active year changes. |
 
 ### Instance methods
 
-- `on(eventName, listener)`
-  - Subscribe to timeline events.
-- `off(eventName, listener)`
-  - Remove a listener previously registered with `on()`.
-- `getValue()`
-  - Returns the currently active year.
-- `syncToYear(year, options)`
-  - Alias for `setValue(year, options)`.
-- `setValue(year, options)`
-  - Programmatically move the pointer to the nearest allowed year.
-- `setStartEnd(startYear, endYear, step)`
-  - Update the timeline range and rebuild markers.
-- `setStep(step)`
-  - Update the step interval and rebuild markers.
-- `setSpecialStep(specialStep)`
-  - Update the milestone interval and rebuild markers.
-- `setShowLabels(showLabels)`
-  - Toggle rendering year labels below milestone markers.
-- `setSliderValues(values)`
-  - Update allowed snap points and rebuild the timeline.
-- `setActiveSlideClass(className)`
-  - Change the active marker class name.
-- `destroy()`
-  - Remove event listeners and clear the rendered timeline.
+| Method | Description |
+|---|---|
+| `getValue()` | Returns the currently active year. |
+| `setValue(year, options?)` | Programmatically move the pointer to the nearest allowed year. |
+| `syncToYear(year, options?)` | Alias for `setValue`. |
+| `on(eventName, listener)` | Subscribe to timeline events. |
+| `off(eventName, listener)` | Remove a previously registered listener. |
+| `setStartEnd(startYear, endYear, step?)` | Update the timeline range and rebuild markers. |
+| `setStep(step)` | Update the step interval and rebuild markers. |
+| `setSpecialStep(specialStep)` | Update the milestone interval and rebuild markers. |
+| `setShowLabels(showLabels)` | Toggle year labels below milestone markers. |
+| `setSliderValues(values)` | Update allowed snap points and rebuild the timeline. |
+| `setActiveSlideClass(className)` | Change the active marker CSS class name. |
+| `destroy()` | Remove event listeners and clear the rendered timeline. |
 
 ## Styling 🎨
 
-Customize the timeline appearance in `css/main.css`:
+Customize the timeline appearance by overriding these classes in your own stylesheet:
 
-- `.timeline-line` — every marker line.
-- `.one-line` — normal marker style.
-- `.specific-line` — highlighted milestone marker.
-- `.timeline-line.active` — active marker state.
-- `.line-label` — year label under milestone markers.
-- `.timeline-handle` — draggable pointer.
-
-You can override these classes in your own stylesheet.
+| Class | Description |
+|---|---|
+| `.timeline-line` | Every marker line. |
+| `.one-line` | Normal (non-milestone) marker style. |
+| `.specific-line` | Highlighted milestone marker. |
+| `.timeline-line.active` | Active marker state. |
+| `.line-label` | Year label under milestone markers. |
+| `.timeline-handle` | The draggable pointer. |
 
 ## Development 🧰
 
 ```bash
-npm install     # install dependencies
-npm run build    # build ESM, CJS, and the CDN/global bundle into dist/
-npm run dev      # build in watch mode
+npm install       # install dependencies
+npm run build     # build ESM, CJS, and the CDN/global bundle into dist/
+npm run dev       # build in watch mode
+npm run typecheck # run TypeScript type checking via JSDoc annotations
 ```
 
 Build output in `dist/`:
 - `timeline-slider.js` — ESM bundle
 - `timeline-slider.cjs` — CommonJS bundle
 - `timeline-slider.global.js` — minified IIFE/global bundle for CDN `<script>` usage
+- `timeline-slider.d.ts` — TypeScript type declarations
